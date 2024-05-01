@@ -1,7 +1,8 @@
-use std::any::Any;
-use rand::Rng;
 use std::cmp::Ordering;
 use std::io;
+
+use rand::Rng;
+use crate::question::{Question, Type};
 
 #[derive(Debug)]
 pub struct Exam {
@@ -47,7 +48,7 @@ impl Exam {
         self
     }
 
-    pub fn take_exam(&mut self) -> String {
+    pub fn take_exam(&mut self) -> ExamResult {
         let mut score = 0;
         for question in &self.questions {
             println!("{:?}", question.text);
@@ -59,56 +60,66 @@ impl Exam {
                 _ => continue
             }
         }
-        format!("You scored {} out of {}", score, self.questions.len())
+        ExamResult::new(score, self.questions.len() as i32)
     }
 }
 
 fn capture_guess(question: &Question) -> i32 {
+    let mut guess = String::new();
+
+    io::stdin()
+        .read_line(&mut guess)
+        .expect("Failed to read line");
+
     match question.q_type {
         Type::MultipleChoice(data) => {
             println!("Possible options are: {:?}", data);
-
-            let mut guess = String::new();
-
-            io::stdin()
-                .read_line(&mut guess)
-                .expect("Failed to read line");
-
-            guess.trim().parse().expect("Please enter a number")
+                match guess.trim().parse::<i32>() {
+                    Ok(num) => {
+                        if (!data.contains(&num)) {
+                            guess.clear();
+                            println!("Please enter one of the valid options");
+                            capture_guess(question)
+                        } else {
+                            num
+                        }
+                    },
+                    Err(_) => {
+                        guess.clear();
+                        println!("Please enter a number");
+                        capture_guess(question)
+                    }
+                }
         }
         Type::Capture => {
-            let mut guess = String::new();
-
-            io::stdin()
-                .read_line(&mut guess)
-                .expect("Failed to read line");
-
-            guess.trim().parse().expect("Please enter a number")
+            match guess.trim().parse::<i32>() {
+                Ok(num) => num,
+                Err(_) => {
+                    guess.clear();
+                    println!("Please enter a number");
+                    capture_guess(question)
+                }
+            }
         }
     }
 }
 
-#[derive(Debug)]
-pub struct Question {
-    id: u8,
-    text: String,
-    q_type: Type,
-    answer: i32,
+pub struct ExamResult {
+    pub score: i32,
+    pub exam_length: i32,
+    pub percentage: f32,
 }
 
-#[derive(Debug)]
-enum Type {
-    MultipleChoice([i32; 4]),
-    Capture,
-}
-
-impl Question {
-    fn new(id: u8, text: String, q_type: Type, answer: i32) -> Self {
+impl ExamResult {
+    fn new(score: i32, exam_length: i32) -> Self {
         Self {
-            id,
-            text,
-            q_type,
-            answer,
+            score,
+            exam_length,
+            percentage: (score as f32 / exam_length as f32) * 100f32
         }
+    }
+
+    pub fn print(&self) {
+        print!("{}", format!("You scored {} out of {}: {}%", self.score, self.exam_length, self.percentage));
     }
 }
