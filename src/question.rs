@@ -1,4 +1,6 @@
-#[derive(Debug)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Question {
     id: u8,
     pub(crate) text: String,
@@ -6,7 +8,7 @@ pub struct Question {
     pub(crate) answer: i32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Type {
     MultipleChoice([i32; 4]),
     Capture,
