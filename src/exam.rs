@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 use std::io;
 
-use rand::Rng;
 use crate::question::{Question, Type};
+use crate::utils::generate_exam_questions;
 
 #[derive(Debug)]
 pub struct Exam {
@@ -17,33 +17,8 @@ impl Exam {
     }
 
     pub fn with_length(mut self, length: u8) -> Self {
-        for n in 1..=length {
-            let q_type = match rand::thread_rng().gen_range(0..=1) {
-                0 => Type::Capture,
-                _ => Type::MultipleChoice([1, 2, 3, 4])
-            };
-            let answer = match q_type {
-                Type::MultipleChoice(data) => {
-                    let i = data.get(rand::thread_rng().gen_range(0..data.len()));
-                    match i {
-                        None => {
-                            panic!("Unable to select answer for multiple choice question")
-                        }
-                        Some(data) => {
-                            data.to_owned()
-                        }
-                    }
-                }
-                Type::Capture => {
-                    rand::thread_rng().gen_range(0..1)
-                }
-            };
-            self.questions.push(Question::new(
-                n,
-                "What is the secret number".to_string(),
-                q_type,
-                answer,
-            ))
+        for q in generate_exam_questions(length) {
+            self.questions.push(q)
         }
         self
     }
@@ -57,7 +32,7 @@ impl Exam {
                 Ordering::Equal => {
                     score += 1;
                 }
-                _ => continue
+                _ => continue,
             }
         }
         ExamResult::new(score, self.questions.len() as i32)
@@ -67,31 +42,33 @@ impl Exam {
 fn capture_guess(question: &Question) -> i32 {
     let mut guess = String::new();
 
-    io::stdin()
-        .read_line(&mut guess)
-        .expect("Failed to read line");
-
     match question.q_type {
         Type::MultipleChoice(data) => {
             println!("Possible options are: {:?}", data);
-                match guess.trim().parse::<i32>() {
-                    Ok(num) => {
-                        if (!data.contains(&num)) {
-                            guess.clear();
-                            println!("Please enter one of the valid options");
-                            capture_guess(question)
-                        } else {
-                            num
-                        }
-                    },
-                    Err(_) => {
+            io::stdin()
+                .read_line(&mut guess)
+                .expect("Failed to read line");
+            match guess.trim().parse::<i32>() {
+                Ok(num) => {
+                    if !data.contains(&num) {
                         guess.clear();
-                        println!("Please enter a number");
+                        println!("Please enter one of the valid options");
                         capture_guess(question)
+                    } else {
+                        num
                     }
                 }
+                Err(_) => {
+                    guess.clear();
+                    println!("Please enter a number");
+                    capture_guess(question)
+                }
+            }
         }
         Type::Capture => {
+            io::stdin()
+                .read_line(&mut guess)
+                .expect("Failed to read line");
             match guess.trim().parse::<i32>() {
                 Ok(num) => num,
                 Err(_) => {
@@ -115,11 +92,17 @@ impl ExamResult {
         Self {
             score,
             exam_length,
-            percentage: (score as f32 / exam_length as f32) * 100f32
+            percentage: (score as f32 / exam_length as f32) * 100f32,
         }
     }
 
     pub fn print(&self) {
-        print!("{}", format!("You scored {} out of {}: {}%", self.score, self.exam_length, self.percentage));
+        print!(
+            "{}",
+            format!(
+                "You scored {} out of {}: {}%",
+                self.score, self.exam_length, self.percentage
+            )
+        );
     }
 }
