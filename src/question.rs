@@ -1,26 +1,15 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Question {
     id: u8,
     pub(crate) text: String,
-    pub(crate) q_type: Type,
-    pub(crate) answer: i32,
+    pub(crate) q_type: QuestionType,
+    pub(crate) answer: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum Type {
-    MultipleChoice([i32; 4]),
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum QuestionType {
+    MultipleChoice([String; 4]),
     Capture,
-}
-
-impl Question {
-    pub(crate) fn new(id: u8, text: String, q_type: Type, answer: i32) -> Self {
-        Self {
-            id,
-            text,
-            q_type,
-            answer,
-        }
-    }
 }
