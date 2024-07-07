@@ -1,7 +1,6 @@
-use std::cmp::Ordering;
 use std::io;
 
-use crate::question::{Question, Type};
+use crate::question::{Question, QuestionType};
 use crate::utils::generate_exam_questions;
 
 #[derive(Debug)]
@@ -16,10 +15,8 @@ impl Exam {
         }
     }
 
-    pub fn with_length(mut self, length: u8) -> Self {
-        for q in generate_exam_questions(length) {
-            self.questions.push(q)
-        }
+    pub fn with_length(mut self, length: i8) -> Self {
+        self.questions.append(&mut generate_exam_questions(length));
         self
     }
 
@@ -27,53 +24,34 @@ impl Exam {
         let mut score = 0;
         for question in &self.questions {
             println!("{:?}", question.text);
-
-            match capture_guess(question).cmp(&question.answer) {
-                Ordering::Equal => {
-                    score += 1;
-                }
-                _ => continue,
+            if capture_guess(question).eq_ignore_ascii_case(&question.answer) {
+                score += 1;
             }
         }
         ExamResult::new(score, self.questions.len() as i32)
     }
 }
 
-fn capture_guess(question: &Question) -> i32 {
+fn capture_guess(question: &Question) -> String {
     let mut guess = String::new();
 
-    match question.q_type {
-        Type::MultipleChoice(data) => {
+    match &question.q_type {
+        QuestionType::Capture => {
+            io::stdin()
+                .read_line(&mut guess)
+                .expect("Failed to read line");
+            guess.trim().to_string()
+        }
+        QuestionType::MultipleChoice(data) => {
             println!("Possible options are: {:?}", data);
             io::stdin()
                 .read_line(&mut guess)
                 .expect("Failed to read line");
-            match guess.trim().parse::<i32>() {
-                Ok(num) => {
-                    if !data.contains(&num) {
-                        guess.clear();
-                        println!("Please enter one of the valid options");
-                        capture_guess(question)
-                    } else {
-                        num
-                    }
-                }
-                Err(_) => {
+            match data.iter().any(|s| s == guess.trim()) {
+                true => guess.trim().to_string(),
+                false => {
                     guess.clear();
-                    println!("Please enter a number");
-                    capture_guess(question)
-                }
-            }
-        }
-        Type::Capture => {
-            io::stdin()
-                .read_line(&mut guess)
-                .expect("Failed to read line");
-            match guess.trim().parse::<i32>() {
-                Ok(num) => num,
-                Err(_) => {
-                    guess.clear();
-                    println!("Please enter a number");
+                    println!("Enter a valid option");
                     capture_guess(question)
                 }
             }
