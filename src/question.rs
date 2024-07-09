@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Question {
-    id: u8,
+    pub(crate) id: u8,
     pub(crate) text: String,
     pub(crate) q_type: QuestionType,
     pub(crate) answer: String,
