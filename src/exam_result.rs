@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, Copy)]
 pub struct ExamResult {
     pub score: i32,
     pub exam_length: i32,
@@ -5,21 +6,26 @@ pub struct ExamResult {
 }
 
 impl ExamResult {
-    pub(crate) fn new(score: i32, exam_length: i32) -> Self {
+    pub(crate) fn new(exam_length: i32) -> Self {
         Self {
-            score,
+            score: 0,
             exam_length,
-            percentage: (score as f32 / exam_length as f32) * 100f32,
+            percentage: 0f32,
         }
     }
 
-    pub fn print(&self) {
-        println!(
-            "{}",
-            format!(
-                "You scored {} out of {}: {}%",
-                self.score, self.exam_length, self.percentage
-            )
-        );
+    pub fn increment(&mut self) {
+        self.score += 1
+    }
+
+    pub fn calculate(&mut self) {
+        self.percentage = (self.score as f32 / self.exam_length as f32) * 100f32;
+    }
+
+    pub fn print(&self) -> String {
+        format!(
+            "You scored {} out of {}: {}%",
+            self.score, self.exam_length, self.percentage
+        )
     }
 }
